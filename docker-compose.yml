@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  plex-webhook-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PLEX_SERVER_URL=
+      - PLEX_API_TOKEN=
+      - VPN_API_KEY=
