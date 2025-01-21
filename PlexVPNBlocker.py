@@ -3,6 +3,7 @@ import requests
 from flask import Flask, request, jsonify
 import json
 import logging
+import xml.etree.ElementTree as ET
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -39,27 +40,43 @@ def check_vpn_usage(ip_address):
         logging.error(f"Failed to query VPN API: {response.status_code} - {response.text}")
         raise Exception(f"VPN API error: {response.status_code} - {response.text}")
 
-def get_session_id(machine_identifier):
-    """Fetch the session ID for a given machine identifier from the Plex Active Sessions API."""
-    url = f"{PLEX_SERVER_URL}/status/sessions"
-    headers = {
-        "X-Plex-Token": PLEX_API_TOKEN
-    }
-    logging.info(f"Querying Active Sessions API for machine identifier: {machine_identifier}")
-    response = requests.get(url, headers=headers)
+def get_session_id(server_url, plex_token):
+    """
+    Sends a GET request to the Plex server to retrieve the session ID (sessionKey)
+    from the current playing media.
 
-    if response.status_code == 200:
-        sessions = response.json().get("MediaContainer", {}).get("Metadata", [])
-        for session in sessions:
-            player = session.get("Player", {})
-            if player.get("machineIdentifier") == machine_identifier:
-                session_id = player.get("sessionKey")
-                logging.info(f"Found session ID {session_id} for machine identifier {machine_identifier}")
-                return session_id
-        logging.warning(f"No matching session found for machine identifier: {machine_identifier}")
+    Args:
+        server_url (str): The base URL of the Plex server (e.g., http://192.168.1.100:32400).
+        plex_token (str): The Plex token for authentication.
+
+    Returns:
+        str: The session ID (sessionKey) if found, else None.
+    """
+    url = f"{server_url}/status/sessions"
+    params = {"X-Plex-Token": plex_token}
+    
+    try:
+        # Send the GET request
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Raise an HTTPError if status code is 4xx/5xx
+        
+        # Parse the XML response
+        root = ET.fromstring(response.text)
+        
+        # Find the sessionKey attribute in the Video tag
+        video_element = root.find(".//Video")
+        if video_element is not None:
+            session_key = video_element.get("sessionKey")
+            return session_key
+        else:
+            print("No Video element found in the response.")
+            return None
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error during the GET request: {e}")
         return None
-    else:
-        logging.error(f"Failed to query Active Sessions API: {response.status_code} - {response.text}")
+    except ET.ParseError as e:
+        print(f"Error parsing the XML response: {e}")
         return None
 
 def stop_playback(session_id):
