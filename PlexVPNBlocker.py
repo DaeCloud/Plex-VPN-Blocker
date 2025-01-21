@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import Flask, request, jsonify
+import json
 
 app = Flask(__name__)
 
@@ -46,7 +47,21 @@ def stop_playback(session_id):
 @app.route("/webhook", methods=["POST"])
 def webhook():
     """Handle incoming Plex webhooks."""
-    data = request.json
+    # Check if the content type is multipart/form-data
+    if request.content_type.startswith("multipart/form-data"):
+        payload = request.form.get("payload")
+        if payload:
+            try:
+                data = json.loads(payload)
+            except json.JSONDecodeError:
+                return jsonify({"status": "Invalid JSON in payload"}), 400
+        else:
+            return jsonify({"status": "No payload found in multipart request"}), 400
+    else:
+        # For other content types, assume JSON body
+        data = request.json
+        if not data:
+            return jsonify({"status": "Invalid or missing JSON payload"}), 400
 
     # Check if the event is a playback start event
     event_type = data.get("event", "")
