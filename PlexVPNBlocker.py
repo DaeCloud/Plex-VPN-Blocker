@@ -8,6 +8,7 @@ app = Flask(__name__)
 PLEX_SERVER_URL = os.getenv("PLEX_SERVER_URL", "http://127.0.0.1:32400")  # Default to localhost if not set
 PLEX_API_TOKEN = os.getenv("PLEX_API_TOKEN", "")
 VPN_API_KEY = os.getenv("VPN_API_KEY", "")
+TEST_BLOCKED_IP = os.getenv("TEST_BLOCKED_IP", "")
 
 if not PLEX_API_TOKEN:
     raise ValueError("PLEX_API_TOKEN environment variable is required")
@@ -15,6 +16,9 @@ if not VPN_API_KEY:
     raise ValueError("VPN_API_KEY environment variable is required")
 
 def check_vpn_usage(ip_address):
+    if ip_address == TEST_BLOCKED_IP:
+        """Check if the given IP address matches the test address."""
+        return true
     """Check if the given IP address is using a VPN."""
     url = f"https://vpnapi.io/api/{ip_address}?key={VPN_API_KEY}"
     response = requests.get(url)
@@ -29,7 +33,7 @@ def stop_playback(session_id):
     url = f"{PLEX_SERVER_URL}/status/sessions/terminate"
     params = {
         "sessionId": session_id,
-        "reason": "Streaming from a VPN or blocked connection., please disconnect from your VPN and try again.",
+        "reason": "Streaming from a VPN or blocked connection, please disconnect from your VPN and try again.",
         "X-Plex-Token": PLEX_API_TOKEN
     }
     response = requests.get(url, params=params)
@@ -70,4 +74,4 @@ def webhook():
     return jsonify({"status": "Playback allowed"}), 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=10201)
