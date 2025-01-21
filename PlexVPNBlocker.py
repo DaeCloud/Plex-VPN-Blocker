@@ -9,16 +9,20 @@ PLEX_SERVER_URL = os.getenv("PLEX_SERVER_URL", "http://127.0.0.1:32400")  # Defa
 PLEX_API_TOKEN = os.getenv("PLEX_API_TOKEN", "")
 VPN_API_KEY = os.getenv("VPN_API_KEY", "")
 TEST_BLOCKED_IP = os.getenv("TEST_BLOCKED_IP", "")
+IGNORED_USERNAMES = os.getenv("IGNORED_USERNAMES", "")
 
 if not PLEX_API_TOKEN:
     raise ValueError("PLEX_API_TOKEN environment variable is required")
 if not VPN_API_KEY:
     raise ValueError("VPN_API_KEY environment variable is required")
 
+# Convert the comma-separated list of ignored usernames into a set for faster lookup
+ignored_usernames_set = set(IGNORED_USERNAMES.split(","))
+
 def check_vpn_usage(ip_address):
     if ip_address == TEST_BLOCKED_IP:
         """Check if the given IP address matches the test address."""
-        return true
+        return True
     """Check if the given IP address is using a VPN."""
     url = f"https://vpnapi.io/api/{ip_address}?key={VPN_API_KEY}"
     response = requests.get(url)
@@ -52,9 +56,14 @@ def webhook():
     # Extract IP and session details
     client_ip = data.get("Player", {}).get("publicAddress", "")
     session_id = data.get("Session", {}).get("id", "")
+    username = data.get("Account", {}).get("title", "")
 
     if not client_ip:
         return jsonify({"status": "Client IP not found in webhook payload"}), 400
+
+    # Check if the username is in the ignored list
+    if username in ignored_usernames_set:
+        return jsonify({"status": "Playback allowed for ignored username"}), 200
 
     # Check if the IP is using a VPN
     try:
