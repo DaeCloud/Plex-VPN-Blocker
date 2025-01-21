@@ -40,7 +40,7 @@ def check_vpn_usage(ip_address):
         logging.error(f"Failed to query VPN API: {response.status_code} - {response.text}")
         raise Exception(f"VPN API error: {response.status_code} - {response.text}")
 
-def get_session_id(server_url, plex_token):
+def get_session_id(server_url):
     """
     Sends a GET request to the Plex server to retrieve the session ID (sessionKey)
     from the current playing media.
@@ -53,7 +53,7 @@ def get_session_id(server_url, plex_token):
         str: The session ID (sessionKey) if found, else None.
     """
     url = f"{server_url}/status/sessions"
-    params = {"X-Plex-Token": plex_token}
+    params = {"X-Plex-Token": PLEX_API_TOKEN}
     
     try:
         # Send the GET request
