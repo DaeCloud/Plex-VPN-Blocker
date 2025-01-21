@@ -17,6 +17,7 @@ PLEX_API_TOKEN = os.getenv("PLEX_API_TOKEN", "")
 VPN_API_KEY = os.getenv("VPN_API_KEY", "")
 TEST_BLOCKED_IP = os.getenv("TEST_BLOCKED_IP", "")
 IGNORED_USERNAMES = os.getenv("IGNORED_USERNAMES", "")
+DISCONNECT_REASON = os.getenv("DISCONNECT_REASON", "Streaming from a VPN or blocked connection, please disconnect from your VPN and try again.")
 
 if not PLEX_API_TOKEN:
     raise ValueError("PLEX_API_TOKEN environment variable is required")
@@ -45,7 +46,7 @@ def stop_playback(session_id):
     url = f"{PLEX_SERVER_URL}/status/sessions/terminate"
     params = {
         "sessionId": session_id,
-        "reason": "Streaming from a VPN or blocked connection, please disconnect from your VPN and try again.",
+        "reason": DISCONNECT_REASON,
         "X-Plex-Token": PLEX_API_TOKEN
     }
     logging.info(f"Sending request to stop playback for session ID: {session_id}")
