@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 COPY PlexVPNBlocker.py .
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 10201
 
 # Run the application
 CMD ["python", "PlexVPNBlocker.py"]
